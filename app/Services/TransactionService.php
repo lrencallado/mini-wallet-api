@@ -20,11 +20,11 @@ class TransactionService
      * This method handles the complete transaction flow with proper locking
      * to prevent race conditions in high-concurrency scenarios.
      *
-     * @param User $sender The user sending the money
-     * @param int $receiverId The ID of the user receiving the money
-     * @param float $amount The amount to transfer
-     * @return Transaction The created transaction record
-     * @throws \Exception If the transaction fails
+     * @param User $sender
+     * @param int $receiverId
+     * @param float $amount
+     * @return Transaction
+     * @throws \Exception
      */
     public function executeTransfer(User $sender, int $receiverId, float $amount): Transaction
     {
