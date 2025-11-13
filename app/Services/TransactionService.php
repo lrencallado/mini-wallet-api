@@ -44,8 +44,8 @@ class TransactionService
             $lockedReceiver = $users[$receiverId];
 
             // Calculate commission
-            $commission = round($amount * self::COMMISSION_RATE, 4);
-            $totalDebit = $amount + $commission;
+            $commission = $this->calculateCommission($amount);
+            $totalDebit = $this->calculateTotalDebit($amount);
 
             // Verify sufficient balance (double-check after lock)
             if ($lockedSender->balance < $totalDebit) {
