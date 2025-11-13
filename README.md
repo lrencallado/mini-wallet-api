@@ -32,7 +32,7 @@ A high-performance digital wallet application built with Laravel that enables us
 ### 1. Clone the Repository
 
 ```bash
-git clone <repository-url>
+git clone git@github.com:lrencallado/mini-wallet-api.git
 cd mini-wallet-api
 ```
 
@@ -113,10 +113,10 @@ All test users have the password: `password`
 ### 7. Start the Development Server
 
 ```bash
+composer run dev 
+or 
 php artisan serve
 ```
-
-The API will be available at `http://localhost:8000`
 
 ## API Endpoints
 
@@ -211,12 +211,6 @@ Run the test suite:
 php artisan test
 ```
 
-Or with coverage:
-
-```bash
-php artisan test --coverage
-```
-
 The test suite includes:
 - Successful transfer scenarios
 - Insufficient balance validation
@@ -226,135 +220,6 @@ The test suite includes:
 - Commission calculation accuracy
 - Transaction history retrieval
 - Authentication requirements
-
-## Technical Design Decisions
-
-### Balance Storage: Decimal vs Integer (Centavos)
-
-**Assignment Requirement:** The specification requires using `decimal` type for balance, amount, and commission_fee.
-
-**Implementation:** This application uses `decimal(12,2)` for balance and amount, and `decimal(12,4)` for commission_fee as specified.
-
-**Industry Best Practice Note:** In production financial systems, storing monetary values as integers (cents/centavos) is generally preferred because:
-- Eliminates floating-point precision errors
-- Enables atomic database operations
-- Better performance for high-concurrency scenarios
-- Used by Stripe, PayPal, and most payment processors
-
-However, for this assignment, we follow the specified decimal approach while maintaining precision through proper rounding and Laravel's decimal casting.
-
-### Concurrency & Race Condition Prevention
-
-**Challenge:** Handle hundreds of transfers per second without balance inconsistencies.
-
-**Solution:** Pessimistic locking with deadlock prevention
-```php
-// Lock users in consistent order (by ID) to prevent deadlocks
-$userIds = [$senderId, $receiverId];
-sort($userIds);
-$users = User::whereIn('id', $userIds)->lockForUpdate()->get();
-```
-
-This ensures:
-- Only one transaction can modify user balances at a time
-- Consistent lock ordering prevents deadlocks
-- Database-level guarantees for data integrity
-
-### Transaction Atomicity
-
-All transfer operations are wrapped in database transactions:
-```php
-DB::transaction(function () {
-    // 1. Lock users
-    // 2. Verify balance
-    // 3. Debit sender
-    // 4. Credit receiver
-    // 5. Create transaction record
-});
-```
-
-If any step fails, all changes are rolled back automatically.
-
-### Scalability for Millions of Transactions
-
-**Approach:** Direct balance storage on users table
-- User balance is stored directly, not calculated from transactions
-- Transactions table has indexes on sender_id, receiver_id, created_at
-- Composite indexes for efficient filtering: (sender_id, created_at), (receiver_id, created_at)
-- Status index for filtering by transaction status
-
-**Performance:** O(1) balance lookups, efficient paginated history queries
-
-### Real-time Updates
-
-Uses Pusher with private channels:
-- Each user has a private channel: `users.{userId}`
-- Only authenticated users can subscribe to their own channel
-- Both sender and receiver receive instant updates after transfer completion
-
-## Project Structure
-
-```
-app/
-├── Events/
-│   └── TransactionCompleted.php    # Pusher broadcast event
-├── Http/
-│   ├── Controllers/Api/
-│   │   └── TransactionController.php
-│   └── Requests/
-│       └── StoreTransactionRequest.php  # Validation rules
-├── Models/
-│   ├── Transaction.php
-│   └── User.php
-└── Services/
-    └── TransactionService.php      # Business logic
-
-database/
-├── migrations/
-│   ├── create_users_table.php
-│   └── create_transactions_table.php
-└── seeders/
-    └── DatabaseSeeder.php
-
-tests/
-└── Feature/
-    └── TransactionTest.php
-
-routes/
-├── api.php                         # API endpoints
-└── channels.php                    # Pusher channel authorization
-```
-
-## Security Considerations
-
-- All API endpoints protected with Sanctum authentication
-- Request validation prevents invalid data
-- User can only access their own transaction history
-- Users cannot send money to themselves
-- Commission and balance checks prevent overdrafts
-- Database transactions ensure data consistency
-- Private Pusher channels ensure users only receive their own updates
-
-## Database Schema
-
-### Users Table
-- `id`: Primary key
-- `name`: User full name
-- `email`: Unique email address
-- `password`: Hashed password
-- `balance`: decimal(12,2) - Current balance
-- `timestamps`
-
-### Transactions Table
-- `id`: Primary key
-- `transaction_reference`: UUID for tracking
-- `sender_id`: Foreign key to users (restrict on delete)
-- `receiver_id`: Foreign key to users (restrict on delete)
-- `amount`: decimal(12,2) - Transfer amount
-- `commission_fee`: decimal(12,4) - Calculated commission
-- `status`: enum('pending', 'completed', 'failed')
-- `timestamps`
-- Indexes: sender_id, receiver_id, created_at, status, composites
 
 ## License
 
