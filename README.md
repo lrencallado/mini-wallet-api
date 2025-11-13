@@ -88,11 +88,6 @@ PUSHER_APP_SECRET=your_app_secret
 PUSHER_APP_CLUSTER=mt1  # or your cluster
 ```
 
-To get Pusher credentials:
-1. Sign up at [pusher.com](https://pusher.com)
-2. Create a new Channels app
-3. Copy the app credentials to your `.env` file
-
 ### 6. Seed the Database
 
 Create test users with balances:
@@ -114,7 +109,9 @@ All test users have the password: `password`
 
 ```bash
 composer run dev 
+```
 or 
+```bash
 php artisan serve
 ```
 
