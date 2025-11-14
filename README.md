@@ -27,6 +27,22 @@ A high-performance digital wallet application built with Laravel that enables us
 - PostgreSQL
 - A Pusher account (free tier available at [pusher.com](https://pusher.com))
 
+## Technical Design Decisions
+
+### Balance, Amount, and Commission fee: Decimal vs Integer (Centavos)
+
+**Assignment Requirement:** The specification requires using `decimal` type for balance, amount, and commission_fee.
+
+**Implementation:** This application uses `decimal(12,2)` for balance and amount, and `decimal(12,4)` for commission_fee as specified.
+
+**Industry Best Practice Note:** In production financial systems, storing monetary values as integers (cents/centavos) is generally preferred because:
+- Eliminates floating-point precision errors
+- Enables atomic database operations
+- Better performance for high-concurrency scenarios
+- Used by Stripe, PayPal, and most payment processors
+
+However, for this assignment, I follow the specified decimal approach while maintaining precision through proper rounding and Laravel's decimal casting.
+
 ## Installation & Setup
 
 ### 1. Clone the Repository
@@ -85,7 +101,7 @@ BROADCAST_CONNECTION=pusher
 PUSHER_APP_ID=your_app_id
 PUSHER_APP_KEY=your_app_key
 PUSHER_APP_SECRET=your_app_secret
-PUSHER_APP_CLUSTER=mt1  # or your cluster
+PUSHER_APP_CLUSTER=your_app_cluster
 ```
 
 ### 6. Seed the Database
