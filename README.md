@@ -91,7 +91,18 @@ Run migrations:
 php artisan migrate
 ```
 
-### 5. Pusher Configuration
+### 5. Session & CORS Configuration
+
+Configure session domain and Sanctum stateful domains for SPA authentication:
+
+```env
+SESSION_DOMAIN=localhost
+SANCTUM_STATEFUL_DOMAINS=localhost:5173
+```
+
+**Note:** If you're running the frontend on a different port or domain, update `SANCTUM_STATEFUL_DOMAINS` accordingly. This setting tells Sanctum which domains can use cookie-based authentication.
+
+### 6. Pusher Configuration
 
 Update your `.env` file with your Pusher credentials:
 
@@ -104,7 +115,7 @@ PUSHER_APP_SECRET=your_app_secret
 PUSHER_APP_CLUSTER=your_app_cluster
 ```
 
-### 6. Seed the Database
+### 7. Seed the Database
 
 Create test users with balances:
 
@@ -121,100 +132,11 @@ This creates 5 test users:
 
 All test users have the password: `password`
 
-### 7. Start the Development Server
+### 8. Start the Development Server, this will run queue worker as well
 
 ```bash
-composer run dev 
+composer run dev
 ```
-or 
-```bash
-php artisan serve
-```
-
-## API Endpoints
-
-### Authentication
-
-First, obtain an API token using Sanctum:
-
-```bash
-POST /api/login
-Content-Type: application/json
-
-{
-  "email": "alice@example.com",
-  "password": "password"
-}
-```
-
-Use the returned token in the `Authorization` header for subsequent requests.
-
-### Get Transaction History
-
-```bash
-GET /api/transactions
-Authorization: Bearer {your-token}
-```
-
-**Response:**
-```json
-{
-  "balance": "1000.00",
-  "transactions": {
-    "data": [
-      {
-        "id": 1,
-        "transaction_reference": "uuid",
-        "sender_id": 1,
-        "receiver_id": 2,
-        "amount": "100.00",
-        "commission_fee": "1.5000",
-        "status": "completed",
-        "created_at": "2025-11-11T10:30:00.000000Z",
-        "sender": {...},
-        "receiver": {...}
-      }
-    ],
-    "links": {...},
-    "meta": {...}
-  }
-}
-```
-
-### Create Transaction (Transfer Money)
-
-```bash
-POST /api/transactions
-Authorization: Bearer {your-token}
-Content-Type: application/json
-
-{
-  "receiver_id": 2,
-  "amount": 100.00
-}
-```
-
-**Response:**
-```json
-{
-  "message": "Transfer completed successfully",
-  "transaction": {
-    "id": 1,
-    "transaction_reference": "uuid",
-    "sender_id": 1,
-    "receiver_id": 2,
-    "amount": "100.00",
-    "commission_fee": "1.5000",
-    "status": "completed",
-    "created_at": "2025-11-11T10:30:00.000000Z"
-  },
-  "new_balance": "898.50"
-}
-```
-
-**Note:** A 1.5% commission is automatically calculated and deducted from the sender. For a $100 transfer:
-- Sender is debited: $101.50 (amount + commission)
-- Receiver is credited: $100.00
 
 ## Running Tests
 
